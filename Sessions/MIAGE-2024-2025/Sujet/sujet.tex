@@ -1,0 +1,421 @@
+\documentclass[a4paper,10pt]{article}
+
+% Package defining the style for exercice sheets (style inspired from lsr-exo)
+%
+% First version: Septembre 2015
+% Current version: Septembre 2015
+%
+%\NeedsTeXFormat{LaTeX2e}
+%\ProvidesPackage{tpstyle}[2015/10/05 Package for the exercices of Thomas]
+%
+\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{ifthen}
+\usepackage{graphicx}
+\usepackage{fullpage}
+\usepackage{calc}
+\usepackage{amsmath}
+%listings: traitement de code source...
+\usepackage{listings}
+\usepackage[textwidth=17mm]{todonotes}
+
+
+% to highlight the comments and questions
+\newcounter{cpt-note}
+\newcounter{cpt-question}
+\newcommand{\Note}[2][inline]{\vspace{0.2cm}\todo[bordercolor=brown!70,backgroundcolor=white,#1]{\addtocounter{cpt-note}{1}
+    \textbf{Note \arabic{cpt-note}} #2}\vspace{0.2cm}}
+
+\newcommand{\Question}[2][inline]{\vspace{0.1cm}\todo[bordercolor=blue,backgroundcolor=white,#1]{\addtocounter{cpt-question}{1}
+    \sf \textbf{Question \arabic{cpt-question}} #2}\vspace{0.2cm}}
+
+\newcommand{\Important}[2][inline]{\vspace{0.1cm}\todo[backgroundcolor=red!20,#1]{\sf \textbf{Important} #2}\vspace{0.1cm}}
+
+\newcommand{\Reponse}[2][inline]{\todo[bordercolor=gray, backgroundcolor=gray!10,#1]{\sf \textbf{Réponse} #2}\vspace{0.1cm}}
+
+
+% taille de la barre de l'en-tete
+\newcommand{\tdlinewidth}{.1pt}
+
+
+\newcommand{\tdsection}{?}
+\newcommand{\tdyear}{?}
+\newcommand{\tdaffiliation}{?}
+\newcommand{\tdtitle}{?}
+\newcommand{\tdnumber}{?}
+\newcommand{\tdlongtitle}{?}
+
+
+%commandes pour changer les options ci-dessus
+\newcommand{\deftdsection}[1]{\renewcommand\tdsection{#1}}
+\newcommand{\deftdyear}[1]{\renewcommand\tdyear{#1}}
+\newcommand{\deftdaffiliation}[1]{\renewcommand\tdaffiliation{#1}}
+\newcommand{\deftdtitle}[1]{\renewcommand\tdtitle{#1}}
+\newcommand{\deftdnumber}[1]{\renewcommand\tdnumber{#1}}
+\newcommand{\deftdlongtitle}[1]{\renewcommand\tdlongtitle{#1}}
+
+%afficher 'Exercice' lorsqu'on fait une nouvelle section
+%\renewcommand{\thesection}{Exercice \@arabic\c@section{} :}
+
+
+%affichage normal pour tous les niveaux hierarchiques inferieurs
+%% \renewcommand{\thesubsection}{Question
+%%   \@arabic\c@section.\@arabic\c@subsection{}}
+
+%\renewcommand*{\familydefault}{\sfdefault}
+
+
+%mise en page: ajoute un peu d'espace sous l'en-tete
+\setlength{\headheight}{.5cm}
+\setlength{\headsep}{.5cm}
+
+
+\renewcommand{\maketitle}{%
+  ~\\
+  \begin{center}
+    {\huge \tdtitle{} \tdnumber{} 
+    }%
+  \end{center}
+  \vspace{.3cm}
+  \begin{center}
+    {\LARGE \textbf \tdlongtitle 
+    }%
+  \end{center}
+  \vspace{.5cm}
+}
+
+
+
+\AtBeginDocument{%
+  \pagestyle{fancy}%
+  \fancyhf{}%
+  %mise en place de l'en-tete
+  \lhead{\small \tdsection{} -- \tdyear}%
+  \rhead{\small \tdaffiliation\hspace{.5cm}\thepage}%
+  \renewcommand{\headrulewidth}{\tdlinewidth}%
+}
+
+%\usepackage{url}
+
+\usepackage{hyperref}
+
+\usepackage{soul}
+
+\usepackage[utf8]{inputenc}
+%\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+
+% Warning/info blocks
+\usepackage{pifont,mdframed}
+\usepackage{emoji}
+
+\newenvironment{warning}
+  {\par\begin{mdframed}[linewidth=2pt,linecolor=orange]%
+    \begin{list}{}{\leftmargin=1cm
+                   \labelwidth=\leftmargin}\item[\emoji{warning}]}
+  {\end{list}\end{mdframed}\par}
+
+  \newenvironment{note}
+  {\par\begin{mdframed}[linewidth=2pt,linecolor=blue]%
+    \begin{list}{}{\leftmargin=1cm
+                   \labelwidth=\leftmargin}\item[\ding{45}]}
+  {\end{list}\end{mdframed}\par}
+
+  \newenvironment{information}
+  {\par\begin{mdframed}[linewidth=2pt,linecolor=blue]%
+    \begin{list}{}{\leftmargin=1cm
+                   \labelwidth=\leftmargin}\item[\emoji{information}]}
+  {\end{list}\end{mdframed}\par}
+
+%% Jupyter style code block
+\usepackage{listings}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+
+% Define Jupyter notebook-style colors
+\definecolor{notebookbg}{rgb}{0.95,0.95,0.92} % Light gray background
+\definecolor{codebg}{rgb}{0.98,0.98,0.98}     % Lighter background for the code area
+\definecolor{codeborder}{rgb}{0.6,0.6,0.6}    % Light gray border
+\definecolor{codefont}{rgb}{0.1,0.1,0.1}      % Dark font color
+
+% Define the Jupyter code style using tcolorbox and listings
+\newtcolorbox{jupytercode}[1][]{colback=codebg, colframe=codeborder, left=5pt, right=5pt, top=5pt, bottom=5pt, boxrule=0.4pt, sharp corners, enhanced, #1}
+
+\lstset{
+    basicstyle=\ttfamily\footnotesize, % Monospaced font
+    keywordstyle=\bfseries\color{blue}, % Keywords in blue and bold
+    commentstyle=\itshape\color{green!60!black}, % Comments in italic green
+    stringstyle=\color{red}, % Strings in red
+    showstringspaces=false,
+    backgroundcolor=\color{codebg}, % Background color
+    frame=none, % No border frame by default
+    tabsize=4,
+    breaklines=true,
+    numbers=left, % Line numbers on the left
+    numberstyle=\tiny\color{gray}, % Style of the line numbers
+}
+
+  
+
+
+\deftdsection{M2 MIAGE -- Éco-Conception Web}
+\deftdyear{\the\year}
+\deftdaffiliation{UFR IM2AG}
+\deftdtitle{TP}
+\deftdnumber{}
+\deftdlongtitle{Observation et outils de mesure énergétique}
+
+\newtheorem{question}{Question}
+
+
+\usepackage{etoolbox}
+\makeatletter
+\preto{\@verbatim}{\topsep=0pt \partopsep=0pt }
+\makeatother
+
+
+\begin{document}
+
+
+\renewcommand{\labelitemi}{$\bullet$}
+
+\maketitle
+
+
+%% L'objectif de ce TP est de se familiariser avec l'utilisation de
+%% Git.
+
+\section*{Préambule}
+Tous les outils de mesure d'énergie nécessitent soit des droits de
+superutilisateur sur la machine, soit du matériel supplémentaire (wattmètre).
+Les \textit{hyperscalers} (AWS, Google Cloud, etc.) ne vous donnent pas accès à
+de tels outils. Néanmoins, le contenu présenté dans ce TP devrait être utile
+lors de (i) la phase de développement, où l'application s'exécute sur un
+ordinateur local, ou (ii) dans un cloud privé, où un contrôle plus approfondi du
+système/matériel est possible.
+
+
+\section{Objectifs du TP}
+
+\begin{itemize}
+  \item Utiliser des outils de monitoring d’énergie
+  \item Visualiser quels composants sont inclus dans un outil de mesure
+  \item Étudier l’impact du nombre de ressources dans la consommation énergétique
+  \item Étudier l’impact du choix du datacentre la consommation énergétique 
+\end{itemize}
+
+
+
+%% \section{Prise en main}
+
+%% %% De nombreux tutoriels sur Git sont disponibles sur Internet. Pour un
+%% %% premier contact avec Git, nous nous proposons de faire le tutoriel
+%% %% suivant (en anglais):
+
+%% %% \begin{center}
+%% %%   \url{https://learngitbranching.js.org/}
+%% %% \end{center}
+
+%% %% % http://try.github.io
+
+%% %% Prenez le temps de bien comprendre ce qu'il se passe et de faire le
+%% %% lien avec ce qui a été présenté en cours.
+
+
+%% %% Si vous êtes allergiques à l'anglais, le tutoriel
+%% %% \url{http://rogerdudler.github.io/git-guide/index.fr.html} peut être
+%% %% une alternative.
+
+
+%% Si vous voulez commencer le TP par un petit tutoriel en français, nous
+%% vous suggérons le suivant: \url{http://rogerdudler.github.io/git-guide/index.fr.html}.
+
+
+\section{Consommation électrique et impact environnemental}
+
+\subsection{Qu'est-ce qui consomme ?}
+
+L'ordinateur sur lequel tourne votre programme consomme de l'électricité pour
+alimenter ses composants : processeur, barrettes de RAM, disque dur, carte
+réseau, ventilateurs, périphériques USB, etc. Il y a également des pertes dans
+l'alimentation électrique (rendement inférieur à 100\%) et dans les circuits
+(perte sous forme de chaleur par effet Joule). La consommation des composants
+dépend parfois de leur utilisation. C'est par exemple le cas pour le CPU, car
+les CPUs modernes sont capables de s'éteindre partiellement lorsqu'ils sont peu
+sollicités.
+
+La consommation d'un logiciel donné n'est pas directement mesurable, mais on
+peut l'estimer en attribuant la consommation du matériel au logiciel.
+ 
+\begin{information}
+    Pour avoir une attribution plausible, il faut bien sûr tenir compte de
+    l'utilisation du matériel par le logiciel.
+
+    Intuitivement, si on exécute deux programmes en même temps sur la même machine :
+    \begin{itemize}
+        \item un programme A qui ne fait que "dormir" (par exemple avec un \texttt{sleep(99999999)})
+        \item un programme B de simulation numérique qui exécute en boucle des calculs matriciels
+    \end{itemize}  
+  
+    On voit que le programme B devrait être "responsable" d'une plus grande part
+    de la consommation électrique que le programme A.
+  
+    En connaissant la consommation du matériel et l'utilisation du matériel par
+    le logiciel, on peut calculer une estimation de l'énergie consommée par
+    chaque programme.
+  
+\end{information}
+  
+
+\subsection{Comment mesurer ?}
+
+\begin{information}
+    Pour cette partie, vous devez impérativement être sous Linux, de préférence
+    Ubuntu 22.04 LTS (les postes de l'IM2AG correspondent parfaitement à cette
+    contrainte).
+\end{information}
+  
+
+Le plus simple est de se concentrer sur le CPU et la RAM, qui disposent
+d'interfaces bas niveau permettant de lire leur consommation électrique à chaque
+petit intervalle de temps $\Delta t$ (chez Intel, $\Delta t = 976 \mu s$). Il
+existe plusieurs logiciels pour récupérer cette information, mais la plupart
+souffrent d'erreurs d'implémentation ou de limitations conceptuelles
+\footnote{Guillaume Raffin, Denis Trystram. Dissecting the software-based
+measurement of CPU energy consumption: a comparative analysis. 2024.
+\href{https://hal.science/hal-04420527}{⟨hal-04420527v2⟩}}.
+
+Pour ce TP, nous allons utiliser un nouvel outil :
+\href{https://alumet.dev/}{ALUMET} (Adaptive, Lightweight, Unified METrics).
+Alumet propose un cadre modulaire permettant de mesurer tout type de matériel,
+de récolter des informations sur le système, et de combiner les deux vers tout
+type de sortie (fichier, base de données). Un système de plugins permet de
+construire un outil de mesure ``sur mesure''. Alumet peut se déployer sur une
+seule machine ou dans un système distribué (HPC classique ou Kubernetes par
+exemple).
+
+Vous allez utiliser Alumet pour mesurer la consommation d'énergie de votre
+machine pendant que le scheduler s'exécute, et obtenir une estimation de la
+consommation du scheduler lui-même.
+
+Travail :
+\begin{enumerate}
+    \item  Aller lire le README du \href{https://github.com/alumet-dev/alumet}{dépôt
+    GitHub}. N'hésitez pas à mettre une petite étoile \emoji{star} ! 
+    \item Télécharger ALUMET à utiliser pour ce TP,
+    c'est le fichier \texttt{alumet-local-agent}. 
+    \item Vérifier qu'Alumet tourne :
+\end{enumerate}
+
+\begin{jupytercode}
+    \begin{lstlisting}
+        git clone 
+        ./alumet-local-agent exec -- sleep 3
+    \end{lstlisting}    
+\end{jupytercode}
+
+Vous devriez obtenir un fichier \texttt{alumet-output.csv} contenant des mesures.
+Utilisez
+\href{https://alumet-dev.github.io/user-book/installation/exec.html}{la
+documentation d'Alumet} pour comprendre le contenu du fichier.
+
+\subsection{Observer la consommation énergétique avec Alumet et \textt{stress}}
+
+\begin{jupytercode}
+    \begin{lstlisting}[language=Python]
+        import subprocess
+        from datetime import datetime
+        import time
+        import os
+        
+        NB_CPUS = 16
+        PROC_TIME_SECONDS = 10
+        SLEEP_TIME_SECONDS = 1
+        
+        ALUMET_RESULT_FILENAME = "../Results-CSV/"+datetime.now().strftime('%Y-%m-%d_%H:%M:%S')+"_alumet-output.csv"+".csv"
+        
+        alumet_command = ["./alumet-local-agent"]
+        
+        stress_command = ["./stress","-c",str(NB_CPUS),"-t",str(PROC_TIME_SECONDS)]
+        
+        ## Lancer Alumet et la commande stress
+        
+        alumet_start = time.time()
+        ## Lancer perf stat et ne pas attendre sa fin
+        alumet_pid = subprocess.Popen(alumet_command).pid
+        
+        ## Attendre un peu pour bien monitorer la commande stress
+        time.sleep(SLEEP_TIME_SECONDS)    
+        
+        stress_start = time.time()
+        ## Lancer la commande stress et attendre sa fin
+        subprocess.run(stress_command)
+        stress_end = time.time()
+        
+        ## Attendre un peu pour bien monitorer la commande stress
+        time.sleep(SLEEP_TIME_SECONDS)
+        
+        ## Terminer Alumet en envoyant SIGINT (-2)
+        ## Équivalent à Ctrl+c
+        subprocess.run(["kill", "-2", str(alumet_pid)])
+        
+        ## Renommer le CSV de sortie d'Alumet
+        os.rename("./alumet-output.csv", ALUMET_RESULT_FILENAME)
+        print("Done")
+    \end{lstlisting}
+    \end{jupytercode}
+
+\begin{information}
+    Il se peut que vous obteniez des erreurs ou warnings à propos de priorité de
+  threads. C'est dû à un manque de privilèges sur les machines de l'école.
+  Ignorez-les, ça n'empêche pas Alumet de fonctionner.
+  
+  En cas d'erreur plus grave, appeler le professeur pour trouver une alternative.
+\end{information}
+  
+\begin{enumerate}
+    \item Utiliser le mode "exécution" d'Alumet (comme ci-dessus) pour obtenir
+    des mesures lors de l'exécution de votre scheduler. Tracez une courbe (avec
+    LibreOffice par exemple) de la consommation du CPU et de la RAM. Faites
+    l'expérience pour différents algorithmes et fichiers d'entrée (pensez à
+    copier les résultats à chaque fois ou à passer un paramètre pour changer le
+    nom de la sortie, sinon le fichier CSV sera écrasé - voir `--help`).
+    \item Comparer la consommation des différentes implémentations de
+    scheduling.
+    \item D'après vous, quel serait le meilleur compromis consommation d'énergie
+    / solution optimale ou proche de l'optimale ?
+\end{enumerate}
+
+
+\subsection{Empreinte carbone}
+
+Produire de l'électricité entraîne des emissions de gaz à effet de serre plus ou
+moins importantes en fonction du mode de production. L'empreinte carbone d'un
+datacentre dépend donc de ses sources d'électricité et, à moins qu'il ne soit
+totalement indépendant du réseau, de sa position.
+
+Travail :
+\begin{itemize}
+    \item Utiliser \href{https://app.electricitymaps.com/map}{ElectricityMaps}
+    pour visualiser l'intensité carbone (en grammes d'équivalent CO2 par kWh
+    d'électricité) de la consommation d'énergie par pays. Quelles sont les
+    sources dites ``bas carbone'' ?
+    \item Multiplier l'intensité carbone de la consommation d'électricité en
+    France par la consommation du CPU lorsqu'il exécute votre scheduler pour
+    obtenir une idée de son empreinte carbone en phase d'usage. Extrapoler à une
+    année entière d'utilisation (24h/24 7j/7).
+    \item (Question ouverte) Est-il toujours bénéfique d'avoir un scheduler qui
+    consomme moins d'électricité ? % on pense bien sûr à l'effet rebond
+
+\end{itemize}
+
+\subsection{Un mot sur ce que nous n'avons pas mesuré}
+
+La production de gaz à effet de serre n'est pas le seul impact de
+l'informatique, et il n'y a pas que la phase d'usage qui compte. Il faut aussi
+fabriquer, transporter, puis gérer la fin de vie des équipements. Même en phase
+d'usage, la consommation électrique entraîne d'autres impacts : en plus de
+l'empreinte carbone, on devrait évaluer la consommation d'eau, de métaux, etc.
+
+
+\end{document}

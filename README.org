@@ -1,0 +1,39 @@
+#+TITLE: Measuring the energy consumption of computer processing
+
+* Introduction
+  This repository contains notebooks and scripts for Lab sessions of measuring
+  the energy consumption of computer processing, using the measurement software
+  [[https://alumet.dev/][ALUMET]]
+
+* Authors
+- Danilo Carastan-Santos: [[https://danilo-carastan-santos.github.io/]]
+- Guillaume Raffin [[https://fr.linkedin.com/in/guillaume-raffin]]
+
+* Repository Structure
+
+|-------------------+-------------------------------------------|
+| Directory Name    | Description                               |
+|-------------------+-------------------------------------------|
+| [[./Sessions]]    | Holds the course material for each year   |
+| [[./Bin]]         | Supportive material for the lab sessions  |
+| [[./Results_CSV]] | Directory for Alumet CSV result files     |
+|-------------------+-------------------------------------------|
+
+* [French] Starting the lab session 
+** Préambule 
+Tous les outils de mesure d'énergie nécessitent soit des droits de
+superutilisateur sur la machine, soit du matériel supplémentaire (wattmètre).
+Les \textit{hyperscalers} (AWS, Google Cloud, etc.) ne vous donnent pas accès à
+de tels outils. Néanmoins, le contenu présenté dans ce TP devrait être utile
+lors de (i) la phase de développement, où l'application s'exécute sur un
+ordinateur local, ou (ii) dans un cloud privé, où un contrôle plus approfondi du
+système/matériel est possible.
+
+** Objectifs
+- Utiliser des outils de monitoring d’énergie
+- Visualiser quels composants sont inclus dans un outil de mesure
+- Étudier l’impact du nombre de ressources dans la consommation énergétique
+- Étudier l’impact du choix du datacentre la consommation énergétique
+
+** Point de départ
+Lire le sujet de TP (Exemple : [[./Sessions/MIAGE-2024-2025/Sujet/sujet.pdf]]
