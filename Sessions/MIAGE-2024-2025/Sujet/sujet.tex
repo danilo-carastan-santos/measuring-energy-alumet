@@ -19,6 +19,8 @@
 \usepackage{listings}
 \usepackage[textwidth=17mm]{todonotes}
 
+\usepackage{booktabs}
+
 
 % to highlight the comments and questions
 \newcounter{cpt-note}
@@ -127,6 +129,13 @@
                    \labelwidth=\leftmargin}\item[\emoji{information}]}
   {\end{list}\end{mdframed}\par}
 
+  \newenvironment{question}
+  {\par\begin{mdframed}[linewidth=2pt,linecolor=red]%
+    \begin{list}{}{\leftmargin=1cm
+                   \labelwidth=\leftmargin}\item[\emoji{red-question-mark}]}
+  {\end{list}\end{mdframed}\par}
+  
+
 %% Jupyter style code block
 \usepackage{listings}
 \usepackage{tcolorbox}
@@ -201,7 +210,7 @@ système/matériel est possible.
   \item Utiliser des outils de monitoring d’énergie
   \item Visualiser quels composants sont inclus dans un outil de mesure
   \item Étudier l’impact du nombre de ressources dans la consommation énergétique
-  \item Étudier l’impact du choix du datacentre la consommation énergétique 
+  \item Étudier l’impact du choix du datacentre dans l'émissions de CO2 
 \end{itemize}
 
 
@@ -286,84 +295,157 @@ measurement of CPU energy consumption: a comparative analysis. 2024.
 \href{https://hal.science/hal-04420527}{⟨hal-04420527v2⟩}}.
 
 Pour ce TP, nous allons utiliser un nouvel outil :
-\href{https://alumet.dev/}{ALUMET} (Adaptive, Lightweight, Unified METrics).
+\href{https://alumet.dev/}{Alumet} (Adaptive, Lightweight, Unified METrics).
 Alumet propose un cadre modulaire permettant de mesurer tout type de matériel,
 de récolter des informations sur le système, et de combiner les deux vers tout
 type de sortie (fichier, base de données). Un système de plugins permet de
 construire un outil de mesure ``sur mesure''. Alumet peut se déployer sur une
-seule machine ou dans un système distribué (HPC classique ou Kubernetes par
-exemple).
+seule machine ou dans un système distribué (Kubernetes par exemple).
 
 Vous allez utiliser Alumet pour mesurer la consommation d'énergie de votre
 machine pendant que le scheduler s'exécute, et obtenir une estimation de la
-consommation du scheduler lui-même.
+consommation d'un programme en exécution.
 
-Travail :
+\begin{question}    
+
 \begin{enumerate}
     \item  Aller lire le README du \href{https://github.com/alumet-dev/alumet}{dépôt
     GitHub}. N'hésitez pas à mettre une petite étoile \emoji{star} ! 
-    \item Télécharger ALUMET à utiliser pour ce TP,
+    \item Télécharger Alumet à utiliser pour ce TP,
     c'est le fichier \texttt{alumet-local-agent}. 
     \item Vérifier qu'Alumet tourne :
 \end{enumerate}
 
 \begin{jupytercode}
     \begin{lstlisting}
-        git clone 
-        ./alumet-local-agent exec -- sleep 3
+    git clone https://github.com/danilo-carastan-santos/measuring-energy-alumet.git
+    cd Bin
+    ./alumet-local-agent exec -- sleep 3
     \end{lstlisting}    
 \end{jupytercode}
+
+\end{question}
 
 Vous devriez obtenir un fichier \texttt{alumet-output.csv} contenant des mesures.
 Utilisez
 \href{https://alumet-dev.github.io/user-book/installation/exec.html}{la
 documentation d'Alumet} pour comprendre le contenu du fichier.
 
-\subsection{Observer la consommation énergétique avec Alumet et \textt{stress}}
+\subsection{Première approche avec TDP}
+
+Pour cette approche, il suffit de connaître le TDP (depuis l'anglais
+\textit{Thermal Design Power}) du processeur utilisé et le temps d'exécution de
+l'application. Pour le premier, vous pouvez obtenir d'informations sur le
+processeur avec la commande ci-dessous.
 
 \begin{jupytercode}
-    \begin{lstlisting}[language=Python]
-        import subprocess
-        from datetime import datetime
-        import time
-        import os
-        
-        NB_CPUS = 16
-        PROC_TIME_SECONDS = 10
-        SLEEP_TIME_SECONDS = 1
-        
-        ALUMET_RESULT_FILENAME = "../Results-CSV/"+datetime.now().strftime('%Y-%m-%d_%H:%M:%S')+"_alumet-output.csv"+".csv"
-        
-        alumet_command = ["./alumet-local-agent"]
-        
-        stress_command = ["./stress","-c",str(NB_CPUS),"-t",str(PROC_TIME_SECONDS)]
-        
-        ## Lancer Alumet et la commande stress
-        
-        alumet_start = time.time()
-        ## Lancer perf stat et ne pas attendre sa fin
-        alumet_pid = subprocess.Popen(alumet_command).pid
-        
-        ## Attendre un peu pour bien monitorer la commande stress
-        time.sleep(SLEEP_TIME_SECONDS)    
-        
-        stress_start = time.time()
-        ## Lancer la commande stress et attendre sa fin
-        subprocess.run(stress_command)
-        stress_end = time.time()
-        
-        ## Attendre un peu pour bien monitorer la commande stress
-        time.sleep(SLEEP_TIME_SECONDS)
-        
-        ## Terminer Alumet en envoyant SIGINT (-2)
-        ## Équivalent à Ctrl+c
-        subprocess.run(["kill", "-2", str(alumet_pid)])
-        
-        ## Renommer le CSV de sortie d'Alumet
-        os.rename("./alumet-output.csv", ALUMET_RESULT_FILENAME)
-        print("Done")
-    \end{lstlisting}
-    \end{jupytercode}
+    \begin{lstlisting}
+    cat /proc/cpuinfo
+    \end{lstlisting}    
+\end{jupytercode}
+
+\begin{question}
+\begin{itemize}
+    \item Pourquoi la commande dessus semble afficher
+    plusieurs fois la même information ?
+    \item En cherchant sur Internet, quel est le TDP du
+    processeur utilisé ? 
+\end{itemize}
+\end{question}
+
+
+\subsection{Observer la consommation énergétique avec Alumet et \texttt{stress}}
+
+Pour commencer, lançons un stress sur le CPU. Vous pouvez faire varier le nombre
+de \textit{workers} avec l'argument -c. Nous allons utiliser la librairie Python
+\texttt{subprocess} qui permet lancer des commandes depuis un code Python.
+
+Le code Python disponible dans le fichier \texttt{./Bin/alumet-stress-test.py}
+(code ci-dessous) permet de lancer Alumet et \texttt{stress}. Il est possible de
+lancer ce stress test avec la commande suivante.
+
+\begin{jupytercode}
+    \begin{lstlisting}
+    python3 alumet-stress-test.py
+    \end{lstlisting}    
+\end{jupytercode}
+
+\newpage
+
+
+\begin{figure}
+    \begin{jupytercode}
+        \begin{lstlisting}[language=Python]
+            import subprocess
+            from datetime import datetime
+            import time
+            import os
+            
+            NB_CPUS = 1
+            PROC_TIME_SECONDS = 10
+            SLEEP_TIME_SECONDS = 1
+            
+            ALUMET_RESULT_FILENAME = "../Results-CSV/"+datetime.now().strftime('%Y-%m-%d_%H:%M:%S')+"_alumet-output.csv"+".csv"
+            
+            alumet_command = ["./alumet-local-agent"]
+            
+            stress_command = ["./stress","-c",str(NB_CPUS),"-t",str(PROC_TIME_SECONDS)]
+            
+            ## Lancer Alumet et la commande stress
+            
+            alumet_start = time.time()
+            ## Lancer perf stat et ne pas attendre sa fin
+            alumet_pid = subprocess.Popen(alumet_command).pid
+            
+            ## Attendre un peu pour bien monitorer la commande stress
+            time.sleep(SLEEP_TIME_SECONDS)    
+            
+            stress_start = time.time()
+            ## Lancer la commande stress et attendre sa fin
+            subprocess.run(stress_command)
+            stress_end = time.time()
+            
+            ## Attendre un peu pour bien monitorer la commande stress
+            time.sleep(SLEEP_TIME_SECONDS)
+            
+            ## Terminer Alumet en envoyant SIGINT (-2)
+            ## Équivalent à Ctrl+c
+            subprocess.run(["kill", "-2", str(alumet_pid)])
+            
+            ## Renommer le CSV de sortie d'Alumet
+            os.rename("./alumet-output.csv", ALUMET_RESULT_FILENAME)
+            print("Done")
+        \end{lstlisting}
+        \end{jupytercode}
+        \caption{Code source de \texttt{./Bin/alumet-stress-test.py}}
+\end{figure}
+
+\begin{question}
+    \begin{itemize}
+        \item Utiliser le script \texttt{./Bin/alumet-stress-test.py} pour
+        obtenir des mesures lors de l'exécution de \texttt{stress}. Tracez une
+        courbe (avec LibreOffice ou Python par exemple) de la \textbf{puissance}
+        du CPU en fonction du temps (timestamp). 
+        \item À l'aide du même script, calculer la consommation énergétique du
+        CPU pendant l'éxecution de \textsl{stress}
+        \item Comparer la consommation des différentes exécutions de
+        \texttt{./Bin/alumet-stress-test.py}, en changeant la valeur de
+        \texttt{NB\_CPUS}.
+    \end{itemize}
+\end{question}
+
+\begin{warning}
+\textbf{Attention !} La sortie \texttt{rapl\_consumed\_energy\_J} d'Alumet
+montre l'énergie consommée et non la puissance. La puissance est normalement
+mesurée en Watts = Joules / secondes. C'est à vous de faire la bonne conversion
+pour avoir la courbe de puissance.
+\end{warning}
+
+\newpage
+
+%Une fois exécuté, script créera un fichier CSV dans de répertoire
+%\texttt{Results-CSV}. Le Tableau~\ref{tab:my-table} illustre un exemple de
+%sortie d'Alumet
 
 \begin{information}
     Il se peut que vous obteniez des erreurs ou warnings à propos de priorité de
@@ -372,42 +454,100 @@ documentation d'Alumet} pour comprendre le contenu du fichier.
   
   En cas d'erreur plus grave, appeler le professeur pour trouver une alternative.
 \end{information}
-  
-\begin{enumerate}
-    \item Utiliser le mode "exécution" d'Alumet (comme ci-dessus) pour obtenir
-    des mesures lors de l'exécution de votre scheduler. Tracez une courbe (avec
-    LibreOffice par exemple) de la consommation du CPU et de la RAM. Faites
-    l'expérience pour différents algorithmes et fichiers d'entrée (pensez à
-    copier les résultats à chaque fois ou à passer un paramètre pour changer le
-    nom de la sortie, sinon le fichier CSV sera écrasé - voir `--help`).
-    \item Comparer la consommation des différentes implémentations de
-    scheduling.
-    \item D'après vous, quel serait le meilleur compromis consommation d'énergie
-    / solution optimale ou proche de l'optimale ?
-\end{enumerate}
 
+
+\begin{comment}
+
+%Une fois exécuté, script créera un fichier CSV dans de répertoire
+%\texttt{Results-CSV}. Le Tableau~\ref{tab:my-table} illustre un exemple de
+%sortie d'Alumet
+
+% Please add the following required packages to your document preamble:
+% \usepackage{booktabs}
+% \usepackage{graphicx}
+\begin{table}[]
+    \caption{Un exemple de sortie CSV d'Alumet}
+    \label{tab:my-table}
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{@{}llllllll@{}}
+    \toprule
+    metric                    & timestamp                      & value            & resource\_kind & resource\_id & consumer\_kind & consumer\_id & domain   \\ \midrule
+    rapl\_consumed\_energy\_J & 2024-10-02T13:53:52.988727804Z & 1.8477783203125  & cpu\_package   & 0            & local\_machine &              & pp0      \\
+    rapl\_consumed\_energy\_J & 2024-10-02T13:53:52.988727804Z & 3.38043212890625 & local\_machine &              & local\_machine &              & platform \\
+    rapl\_consumed\_energy\_J & 2024-10-02T13:53:52.988727804Z & 2.18017578125    & cpu\_package   & 0            & local\_machine &              & package  \\ \bottomrule
+    \end{tabular}%
+    }
+    \end{table}
+\end{comment}
 
 \subsection{Empreinte carbone}
 
-Produire de l'électricité entraîne des emissions de gaz à effet de serre plus ou
+Produire de l'électricité entraîne des émissions de gaz à effet de serre plus ou
 moins importantes en fonction du mode de production. L'empreinte carbone d'un
 datacentre dépend donc de ses sources d'électricité et, à moins qu'il ne soit
 totalement indépendant du réseau, de sa position.
 
-Travail :
-\begin{itemize}
-    \item Utiliser \href{https://app.electricitymaps.com/map}{ElectricityMaps}
-    pour visualiser l'intensité carbone (en grammes d'équivalent CO2 par kWh
-    d'électricité) de la consommation d'énergie par pays. Quelles sont les
-    sources dites ``bas carbone'' ?
-    \item Multiplier l'intensité carbone de la consommation d'électricité en
-    France par la consommation du CPU lorsqu'il exécute votre scheduler pour
-    obtenir une idée de son empreinte carbone en phase d'usage. Extrapoler à une
-    année entière d'utilisation (24h/24 7j/7).
-    \item (Question ouverte) Est-il toujours bénéfique d'avoir un scheduler qui
-    consomme moins d'électricité ? % on pense bien sûr à l'effet rebond
+\begin{question}
+    \begin{itemize}
+        \item Utiliser \href{https://app.electricitymaps.com/map}{ElectricityMaps}
+        pour visualiser l'intensité carbone (en grammes d'équivalent CO2 par kWh
+        d'électricité) de la consommation d'énergie par pays. Quelles sont les
+        sources dites ``bas carbone'' ?        
+        \item Multiplier l'intensité carbone de la consommation d'électricité en
+        France par la consommation du CPU lorsqu'il exécute \texttt{stress} pour
+        obtenir une idée de son empreinte carbone en phase d'usage. Extrapoler à une
+        année entière d'exécution de \texttt{stress} (24h/24 7j/7).
+        \item Utiliser la
+        \href{https://cloud.google.com/sustainability/region-carbon}{liste
+        d'intensité carbone de serveurs Google Cloud} pour comparer l'intensité
+        carbone de serveurs Google dans plusieurs régions
+        %\item (Question ouverte) Est-il toujours bénéfique d'avoir un scheduler qui
+        %consomme moins d'électricité ? % on pense bien sûr à l'effet rebond
+        \item Utiliser le
+        \href{https://cloud.google.com/products/calculator}{simulateur de prix
+        de machine virtuelles} de Google Cloud pour comparer les émissions
+        \textit{versus} le prix de chaque région des datacentres Google Cloud.
+        \item Essayer de trouver les mêmes types d'informations des points
+        précédents pour d'autres \textit{hyperscalers} (Amazon AWS, Microsoft
+        Azure).
+        %https://cloud.google.com/products/calculator
+        %https://cloud.google.com/sustainability/region-carbon
+    \end{itemize}
+\end{question}
 
-\end{itemize}
+\begin{information}
+    \begin{itemize}
+        \item Pour la
+        \href{https://cloud.google.com/sustainability/region-carbon}{liste
+        d'intensité carbone de serveurs Google Cloud}, Google utilise deux
+        indicateurs : (1) le CFE\% (\textit{Carbon Free Energy}), qui est une
+        pourcentage du total d'énergie utilisé qui provient d'une source à très
+        faibles émissions\footnote{qu'on suppose qui est proche de zero}, et (2) le \textit{Grid Carbon Intensity}, qui est
+        l'intensité carbone du reste de l'énergie qui n'est pas fournie par le
+        CFE. Exemple : pour 10 kWh de consommation énergétique dans une région
+        avec CFE = 40\% et \textit{Grid Carbon Intensity} = 456 gCO2eq/kWh. 10
+        kWh $\cdot$ 0.4 = 4 kWh d'énergie a été consommée à très faibles
+        émissions, et le reste a produit 6 kWh $\cdot$ 456 gCO2eq/kWh = 2,73
+        kgCO2eq d'émissions.
+        \item Pour le \href{https://cloud.google.com/products/calculator}{simulateur de
+        prix de machine virtuelles}, vous pouvez utiliser une configuration
+        standard. Par exemple avec une machine virutelle
+        \texttt{n1\_standard\_4}. Il suffit de cliquer sur \textit{Add to
+        estimate} et puis sur \textit{Compute Engine}. La machine virtuelle
+        \texttt{n1\_standard\_4} sera le choix par default.
+        \item Pour les exercices avec les informations de Google Cloud, nous
+        supposons qu’une machine virtuelle occupe entièrement une machine
+        physique, ce qui n'est largement pas le cas. La consommation d'une
+        machine virtuelle n'est qu'un pourcentage de la consommation totale de
+        la machine physique (\textit{host machine}). Google offre un service
+        \href{https://cloud.google.com/carbon-footprint?hl=fr}{Empreinte
+        Carbone} qui donne une idée des émissions. À vous de voir s'il y a de
+        services similaires pour les autres \textit{hyperscalers}. 
+    \end{itemize}
+\end{information}
+
+
+
 
 \subsection{Un mot sur ce que nous n'avons pas mesuré}
 

@@ -3,11 +3,11 @@ from datetime import datetime
 import time
 import os
 
-NB_CPUS = 16
+NB_CPUS = 1
 PROC_TIME_SECONDS = 10
 SLEEP_TIME_SECONDS = 1
 
-ALUMET_RESULT_FILENAME = "../Results-CSV/"+datetime.now().strftime('%Y-%m-%d_%H:%M:%S')+"_alumet-output.csv"+".csv"
+ALUMET_RESULT_FILENAME = "../Results-CSV/"+datetime.now().strftime('%Y-%m-%d_%H:%M:%S')+"_alumet-output.csv"
 
 alumet_command = ["./alumet-local-agent"]
 
